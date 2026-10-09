@@ -1,69 +1,107 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { ArrowRight, Bike, Building2, PackageCheck, ShieldCheck, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { Brand } from "@/components/Brand";
+import { Button } from "@/components/ui/Button";
+import { useAuth } from "@/context/auth";
+
+const FEATURES = [
+  {
+    icon: PackageCheck,
+    title: "Order in seconds",
+    body: "Get an instant, server-calculated price and place a delivery request with live tracking.",
+  },
+  {
+    icon: Bike,
+    title: "Riders get moving",
+    body: "Verified riders claim nearby jobs and progress them from pickup to delivery.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Admins stay in control",
+    body: "Verify riders, dispatch orders, suspend accounts, monitor revenue and issue refunds.",
+  },
+];
+
+export default function LandingPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user) router.replace("/dashboard");
+  }, [loading, user, router]);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <main className="grid-glow relative min-h-screen overflow-hidden">
+      <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-6">
+        <header className="flex items-center justify-between py-6">
+          <Brand />
+          <nav className="flex items-center gap-2">
+            <Link href="/login">
+              <Button variant="ghost" size="sm">
+                Sign in
+              </Button>
+            </Link>
+            <Link href="/register">
+              <Button size="sm" icon={<Sparkles className="size-3.5" />}>
+                Get started
+              </Button>
+            </Link>
+          </nav>
+        </header>
+
+        <section className="flex flex-1 flex-col items-center justify-center py-16 text-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
+            <Sparkles className="size-3.5 text-brand-400" />
+            Customers · Riders · Admins
+          </span>
+          <h1 className="mt-6 max-w-3xl text-balance text-4xl font-semibold tracking-tight text-white sm:text-6xl">
+            Deliveries, end to end —{" "}
+            <span className="bg-gradient-to-r from-brand-400 to-emerald-400 bg-clip-text text-transparent">
+              priced, dispatched, tracked.
+            </span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="mt-5 max-w-xl text-pretty text-base text-slate-400">
+            Swiftly is a complete delivery operations platform. Place and pay for orders, claim
+            jobs as a rider, and run the whole thing from an admin console.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <Link href="/register">
+              <Button size="lg" icon={<ArrowRight className="size-4" />}>
+                Create an account
+              </Button>
+            </Link>
+            <Link href="/login">
+              <Button size="lg" variant="outline">
+                Sign in
+              </Button>
+            </Link>
+          </div>
+
+          <div className="mt-16 grid w-full max-w-4xl gap-4 sm:grid-cols-3">
+            {FEATURES.map((feature) => (
+              <div
+                key={feature.title}
+                className="animate-fade-in-up rounded-2xl border border-white/5 bg-slate-900/50 p-5 text-left backdrop-blur transition hover:border-brand-500/30 hover:bg-slate-900/80"
+              >
+                <feature.icon className="size-5 text-brand-400" />
+                <h3 className="mt-3 text-sm font-semibold text-white">{feature.title}</h3>
+                <p className="mt-1.5 text-xs leading-relaxed text-slate-400">{feature.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <footer className="flex flex-col items-center justify-between gap-2 py-6 text-xs text-slate-500 sm:flex-row">
+          <span className="inline-flex items-center gap-1.5">
+            <Building2 className="size-3.5" /> Swiftly Delivery Platform
+          </span>
+          <span>Backend at {process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}</span>
+        </footer>
+      </div>
+    </main>
   );
 }

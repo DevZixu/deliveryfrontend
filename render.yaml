@@ -1,0 +1,16 @@
+# Render Blueprint for the delivery-platform web app.
+# In Render: New + > Blueprint > pick this repo. Set NEXT_PUBLIC_API_URL to the
+# public URL of the delivery-platform-api service (e.g. https://delivery-platform-api.onrender.com).
+services:
+  - type: web
+    name: delivery-platform-web
+    runtime: node
+    plan: free
+    branch: main
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NEXT_PUBLIC_API_URL
+        sync: false

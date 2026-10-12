@@ -232,3 +232,49 @@ export const statsApi = {
 };
 
 export type { Availability, Delivery, DeliveryStatus, Payment, Role, User };
+
+// ---------------------------------------------------------------------------
+// Admin: staff management
+// ---------------------------------------------------------------------------
+
+export interface CreateStaffPayload {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+}
+
+export const adminStaffsApi = {
+  list: (query?: Query) => get<Paged<User>>("/api/admin/staffs", query),
+  get: (id: string) => get<{ user: User }>(`/api/admin/staffs/${id}`),
+  create: (payload: CreateStaffPayload) => post<{ user: User }>("/api/admin/staffs", payload),
+  changeStatus: (id: string, status: string) =>
+    patch<{ user: User }>(`/api/admin/staffs/${id}/status`, { status }),
+};
+
+// ---------------------------------------------------------------------------
+// Staff: delivery creation
+// ---------------------------------------------------------------------------
+
+export interface StaffCreateDeliveryPayload {
+  customerEmail: string;
+  customerFirstName?: string;
+  customerLastName?: string;
+  customerPhone?: string;
+  pickup: { name: string; address: string; city: string; phone: string; note?: string };
+  dropoff: { recipientName: string; address: string; city: string; phone: string; note?: string };
+  packageDescription: string;
+  weightKg: number;
+  distanceKm: number;
+  paymentMethod: "CASH" | "CARD" | "TRANSFER";
+  scheduledFor?: string;
+}
+
+export const staffApi = {
+  createDelivery: (payload: StaffCreateDeliveryPayload) =>
+    post<{ delivery: Delivery; customerCreated: boolean; customer: { id: string; email: string; fullName: string } }>(
+      "/api/staff/deliveries",
+      payload,
+    ),
+};

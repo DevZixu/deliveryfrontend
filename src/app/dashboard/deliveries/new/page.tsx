@@ -1,15 +1,22 @@
 "use client";
 
-import { Calculator, MapPin, PackagePlus, Receipt, Truck } from "lucide-react";
+import { Calculator, MapPin, PackagePlus, Receipt, Truck, UserSearch } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, Field, Input, Select, Textarea } from "@/components/ui/Card";
 import { Spinner } from "@/components/ui/Spinner";
 import { useToast } from "@/components/ui/Toast";
-import { ApiError, deliveriesApi, type CreateDeliveryPayload } from "@/lib/api";
+import {
+  ApiError,
+  deliveriesApi,
+  staffApi,
+  type CreateDeliveryPayload,
+  type StaffCreateDeliveryPayload,
+} from "@/lib/api";
 import { currency } from "@/lib/format";
 import type { PaymentMethod } from "@/lib/types";
+import { useAuth } from "@/context/auth";
 import { useDebounced } from "@/lib/useDebounced";
 
 interface AddressForm {
@@ -25,6 +32,14 @@ const EMPTY_PICKUP: AddressForm = { name: "", address: "", city: "", phone: "", 
 export default function NewDeliveryPage() {
   const router = useRouter();
   const toast = useToast();
+  const { user } = useAuth();
+  const isStaff = user?.role === "STAFF";
+
+  // Staff-only: customer fields
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [customerFirstName, setCustomerFirstName] = useState("");
+  const [customerLastName, setCustomerLastName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
 
   const [pickup, setPickup] = useState<AddressForm>(EMPTY_PICKUP);
   const [dropoff, setDropoff] = useState<AddressForm>({ ...EMPTY_PICKUP, name: "" });
@@ -42,18 +57,18 @@ export default function NewDeliveryPage() {
   const debouncedWeight = useDebounced(weightKg, 400);
 
   useEffect(() => {
+    let active = true;
     const distance = Number.parseFloat(debouncedDistance);
     const weight = Number.parseFloat(debouncedWeight);
     if (!Number.isFinite(distance) || distance < 0.1 || !Number.isFinite(weight) || weight < 0.1) {
       setFee(null);
       return;
     }
-    let active = true;
     setQuoteLoading(true);
-    void (async () => {
+    (async () => {
       try {
-        const quote = await deliveriesApi.quote(distance, weight);
-        if (active) setFee(quote);
+        const result = await deliveriesApi.quote(distance, weight);
+        if (active) setFee(result);
       } catch {
         if (active) setFee(null);
       } finally {
@@ -69,30 +84,64 @@ export default function NewDeliveryPage() {
     event.preventDefault();
     setSubmitting(true);
     try {
-      const payload: CreateDeliveryPayload = {
-        pickup: {
-          name: pickup.name,
-          address: pickup.address,
-          city: pickup.city,
-          phone: pickup.phone,
-          note: pickup.note || undefined,
-        },
-        dropoff: {
-          recipientName: dropoff.name,
-          address: dropoff.address,
-          city: dropoff.city,
-          phone: dropoff.phone,
-          note: dropoff.note || undefined,
-        },
-        packageDescription,
-        weightKg: Number.parseFloat(weightKg),
-        distanceKm: Number.parseFloat(distanceKm),
-        paymentMethod,
-        scheduledFor: scheduledFor ? new Date(scheduledFor).toISOString() : undefined,
-      };
-      const { delivery } = await deliveriesApi.create(payload);
-      toast.success("Delivery created", `Tracking ${delivery.trackingCode}`);
-      router.push(`/dashboard/deliveries/${delivery.id}`);
+      if (isStaff) {
+        const payload: StaffCreateDeliveryPayload = {
+          customerEmail,
+          customerFirstName: customerFirstName || undefined,
+          customerLastName: customerLastName || undefined,
+          customerPhone: customerPhone || undefined,
+          pickup: {
+            name: pickup.name,
+            address: pickup.address,
+            city: pickup.city,
+            phone: pickup.phone,
+            note: pickup.note || undefined,
+          },
+          dropoff: {
+            recipientName: dropoff.name,
+            address: dropoff.address,
+            city: dropoff.city,
+            phone: dropoff.phone,
+            note: dropoff.note || undefined,
+          },
+          packageDescription,
+          weightKg: Number.parseFloat(weightKg),
+          distanceKm: Number.parseFloat(distanceKm),
+          paymentMethod,
+          scheduledFor: scheduledFor ? new Date(scheduledFor).toISOString() : undefined,
+        };
+        const { delivery, customerCreated, customer } = await staffApi.createDelivery(payload);
+        const hint = customerCreated
+          ? `New customer ${customer.fullName} created. Tracking: ${delivery.trackingCode}`
+          : `Tracking: ${delivery.trackingCode}`;
+        toast.success("Delivery created", hint);
+        router.push(`/dashboard/deliveries/${delivery.id}`);
+      } else {
+        const payload: CreateDeliveryPayload = {
+          pickup: {
+            name: pickup.name,
+            address: pickup.address,
+            city: pickup.city,
+            phone: pickup.phone,
+            note: pickup.note || undefined,
+          },
+          dropoff: {
+            recipientName: dropoff.name,
+            address: dropoff.address,
+            city: dropoff.city,
+            phone: dropoff.phone,
+            note: dropoff.note || undefined,
+          },
+          packageDescription,
+          weightKg: Number.parseFloat(weightKg),
+          distanceKm: Number.parseFloat(distanceKm),
+          paymentMethod,
+          scheduledFor: scheduledFor ? new Date(scheduledFor).toISOString() : undefined,
+        };
+        const { delivery } = await deliveriesApi.create(payload);
+        toast.success("Delivery created", `Tracking ${delivery.trackingCode}`);
+        router.push(`/dashboard/deliveries/${delivery.id}`);
+      }
     } catch (error) {
       const message =
         error instanceof ApiError && error.details?.length ? error.details.join(" · ") : undefined;
@@ -158,11 +207,64 @@ export default function NewDeliveryPage() {
     <form onSubmit={submit} className="animate-fade-in-up">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-white">New delivery</h1>
-        <p className="mt-1 text-sm text-slate-400">Tell us where to pick up and drop off the parcel.</p>
+        <p className="mt-1 text-sm text-slate-400">
+          {isStaff ? "Create a delivery on behalf of a customer." : "Tell us where to pick up and drop off the parcel."}
+        </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
         <div className="space-y-6">
+          {/* Staff-only: Customer lookup */}
+          {isStaff && (
+            <Card>
+              <CardHeader
+                title={
+                  <span className="inline-flex items-center gap-2">
+                    <UserSearch className="size-4 text-amber-400" /> Customer
+                  </span>
+                }
+              />
+              <div className="space-y-3 p-5">
+                <Field label="Customer email" hint="Required — auto-creates account if not found">
+                  <Input
+                    required
+                    type="email"
+                    value={customerEmail}
+                    placeholder="customer@example.com"
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                  />
+                </Field>
+                <p className="text-xs text-slate-500">
+                  If the customer doesn't exist, fill in the fields below to create their account.
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="First name" hint="Optional if account exists">
+                    <Input
+                      value={customerFirstName}
+                      placeholder="Jordan"
+                      onChange={(e) => setCustomerFirstName(e.target.value)}
+                    />
+                  </Field>
+                  <Field label="Last name" hint="Optional if account exists">
+                    <Input
+                      value={customerLastName}
+                      placeholder="Smith"
+                      onChange={(e) => setCustomerLastName(e.target.value)}
+                    />
+                  </Field>
+                </div>
+                <Field label="Customer phone" hint="Optional">
+                  <Input
+                    type="tel"
+                    value={customerPhone}
+                    placeholder="+15550001000"
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                  />
+                </Field>
+              </div>
+            </Card>
+          )}
+
           <Card>
             <CardHeader title={<span className="inline-flex items-center gap-2"><MapPin className="size-4 text-emerald-400" /> Pickup</span>} />
             <div className="p-5">{addressSection(pickup, setPickup, { name: "Pickup contact", namePlaceholder: "Store / sender" })}</div>
@@ -215,7 +317,7 @@ export default function NewDeliveryPage() {
 
         <div className="space-y-6">
           <Card>
-            <CardHeader title={<span className="inline-flex items-center gap-2"><Receipt className="size-4 text-amber-400" /> Payment & schedule</span>} />
+            <CardHeader title={<span className="inline-flex items-center gap-2"><Receipt className="size-4 text-amber-400" /> Payment &amp; schedule</span>} />
             <div className="space-y-4 p-5">
               <Field label="Payment method">
                 <Select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}>
@@ -256,7 +358,7 @@ export default function NewDeliveryPage() {
                 disabled={!fee}
                 icon={<Truck className="size-4" />}
               >
-                Place delivery request
+                {isStaff ? "Create delivery for customer" : "Place delivery request"}
               </Button>
             </div>
           </Card>

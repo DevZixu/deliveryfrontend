@@ -1,4 +1,4 @@
-export type Role = "CUSTOMER" | "RIDER" | "ADMIN";
+export type Role = "CUSTOMER" | "RIDER" | "ADMIN" | "STAFF";
 export type AccountStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
 export type Availability = "AVAILABLE" | "BUSY" | "OFFLINE";
 export type DeliveryStatus =

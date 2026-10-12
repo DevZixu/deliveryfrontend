@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Briefcase,
   CreditCard,
   LayoutDashboard,
   LogOut,
@@ -52,8 +53,15 @@ const NAV: Record<Role, NavItem[]> = {
     { href: "/dashboard/deliveries", label: "Deliveries", icon: Package },
     { href: "/dashboard/riders", label: "Riders", icon: Bike },
     { href: "/dashboard/users", label: "Users", icon: Users },
+    { href: "/dashboard/staffs", label: "Staff", icon: Briefcase },
     { href: "/dashboard/payments", label: "Payments", icon: CreditCard },
     { href: "/dashboard/stats", label: "Analytics", icon: BarChart3 },
+  ],
+  STAFF: [
+    { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
+    { href: "/dashboard/deliveries/new", label: "New delivery", icon: Plus },
+    { href: "/dashboard/deliveries", label: "Deliveries", icon: Package },
+    { href: "/dashboard/profile", label: "Profile", icon: UserIcon },
   ],
 };
 

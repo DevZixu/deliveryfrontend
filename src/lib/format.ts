@@ -69,4 +69,5 @@ export const ROLE_META: Record<Role, { label: string; tone: string }> = {
   CUSTOMER: { label: "Customer", tone: "bg-sky-500/10 text-sky-300 ring-sky-500/30" },
   RIDER: { label: "Rider", tone: "bg-violet-500/10 text-violet-300 ring-violet-500/30" },
   ADMIN: { label: "Admin", tone: "bg-brand-500/10 text-brand-300 ring-brand-500/30" },
+  STAFF: { label: "Staff", tone: "bg-amber-500/10 text-amber-300 ring-amber-500/30" },
 };
